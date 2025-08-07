@@ -1,0 +1,7 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and update with your values
+
+group_number = "group-6"  # Replace with your actual group number from Brightspace
+location     = "East US"
+kubernetes_version = "1.32"
+vm_size     = "Standard_B2s"

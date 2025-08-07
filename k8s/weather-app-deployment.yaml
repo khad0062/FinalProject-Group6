@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-app
+  labels:
+    app: weather-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: weather-app
+  template:
+    metadata:
+      labels:
+        app: weather-app
+    spec:
+      containers:
+      - name: weather-app
+        image: ${ACR_LOGIN_SERVER}/weather-app:${IMAGE_TAG}
+        ports:
+        - containerPort: 3000
+        env:
+        - name: WEATHER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: weather-app-secrets
+              key: weather-api-key
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: weather-app-secrets
+              key: redis-url
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: acr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-app-service
+spec:
+  selector:
+    app: weather-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: weather-app-secrets
+type: Opaque
+data:
+  weather-api-key: ${WEATHER_API_KEY_BASE64}
+  redis-url: ${REDIS_URL_BASE64}
